@@ -649,9 +649,9 @@ function getchartforselectedProject($foss_type, $sub_type, $startdate, $enddate,
     
     $title = "";
     if ($sub_type == "TBC") {
-        $title = $foss_type . "" . "'s Textbook Companion Statictics";
+        $title = $foss_type . "" . "'s Completed Textbook Companion Statictics";
     } else {
-        $title = $foss_type . "" . "'s Lab Migration Statistics";
+        $title = $foss_type . "" . "'s Completed Lab Migration Statistics";
     }
     
     $chart = array(
@@ -1635,6 +1635,7 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state)
         $commands[] = ajax_command_html("#dropdown-third-replace", "");
         
     } else if ($foss_sub_project == '3') {
+       
         $form['startdate']['#markup'] = "";
         $commands[] = ajax_command_html("#startdate", "");
         $form['enddate']['#markup'] = "";
@@ -1645,6 +1646,12 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state)
         $commands[] = ajax_command_html("#load_state", "");
         $form['load_country']['#markup'] = "";
         $commands[] = ajax_command_html("#load_country", "");
+	$form['dropdown-second-replace']['#markup'] = "";
+        $commands[] = ajax_command_html("#dropdown-second-replace", "");
+        $form['dropdown-third-replace']['#markup'] = "";
+        $commands[] = ajax_command_html("#dropdown-third-replace", "");
+
+        
     }
     
     else {
@@ -1672,6 +1679,14 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state)
             'maxDate' => 0
         );
         $commands[] = ajax_command_html("#enddate", drupal_render($form['end_date']));
+
+
+	$form['load_city']['#markup'] = "";
+        $commands[] = ajax_command_html("#load_city", "");
+        $form['load_state']['#markup'] = "";
+        $commands[] = ajax_command_html("#load_state", "");
+        $form['load_country']['#markup'] = "";
+        $commands[] = ajax_command_html("#load_country", "");
         
     }
     $form['foss_sub_project']['#default_value'] = "--------------";
@@ -1680,10 +1695,18 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state)
     
     
     if ($foss_sub_project != "" && ($foss_sub_project_activities == 1 || $foss_sub_project_activities == 2)) {
-        $form['foss_sub_project_status']['#type'] = "select";
-        $form['foss_sub_project_status']['#title'] = t("Status");
-        $form['foss_sub_project_status']['#options'] = _ajax_example_get_third_dropdown_options($foss_sub_project_activities);
-        $commands[] = ajax_command_html("#dropdown-third-replace", drupal_render($form['foss_sub_project_status']));
+
+	if($foss_sub_project==3){
+   		$foss_sub_project_activities="";
+ 		$form['dropdown-third-replace']['#markup'] = "";
+        	$commands[] = ajax_command_html("#dropdown-third-replace", "");
+		}else{
+  		$form['foss_sub_project_status']['#type'] = "select";
+        	$form['foss_sub_project_status']['#title'] = t("Status");
+        	$form['foss_sub_project_status']['#options'] = _ajax_example_get_third_dropdown_options($foss_sub_project_activities);
+        	$commands[] = ajax_command_html("#dropdown-third-replace", drupal_render($form['foss_sub_project_status']));
+		}
+      
     } else {
         $form['dropdown-third-replace']['#markup'] = "";
         $commands[] = ajax_command_html("#dropdown-third-replace", "");
@@ -1698,8 +1721,10 @@ function ajax_foss_type_dependent_dropdown_callback($form, &$form_state)
 function ajax_foss_sub_project_dependent_dropdown_callback($form, &$form_state)
 {
 	$foss_project = $form_state['values']['foss_sub_project'];
+    	$foss_type = $form_state['values']['foss_type'];
 
-    $foss_type = $form_state['values']['foss_type'];
+
+	
     if ($foss_type != "" && $foss_project != 0 && $foss_type != 3) {
 
 	if($foss_project==7){
@@ -1935,6 +1960,19 @@ function ajax_example_submit_driven_callback($form, &$form_state)
 					';
         $commands[] = ajax_command_html("#default_load", drupal_render($form['default_load']));
     } else if ($foss_type != '--------------' && (($foss_sub_project == "--------------") || ($foss_sub_project == "No Sub-Project Available"))) {
+
+		$tbcdatacheck="";
+		$tbcchartcheck="";
+		$lmdatacheck="";
+		$lmchartcheck="";
+		$workshopdatacheck="";
+		$self_workshopdatacheck="";
+		$conferencedatacheck="";
+		$spoken_tutorialdatacheck="";
+
+
+
+
         $form['displaytext']['#markup'] = "Statistic of project : " . $foss_type;
         $commands[] = ajax_command_html("#displaytext", drupal_render($form['displaytext']));
         db_set_active('default'); // We need to call the main (drupal) db back      
@@ -2061,6 +2099,59 @@ function ajax_example_submit_driven_callback($form, &$form_state)
      //        }
      //    }
      //    $form['default_load']['#markup'] = $pagecontent;
+
+
+foreach ($optiondata as $value) {
+             $i++;
+            //$options[$i]=$optionvalue[$i];
+              if (($subproject_detail->$value) != 0) {
+                 if ($value == "tbc") {
+                      $tbcdatacheck=get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag);
+
+ $tbcchartcheck=drupal_render(getchartforselectedProject($foss_type, 'TBC', $startdate, $enddate, $countryname, $statename, $cityname));
+
+                 } else if ($value == "lab_migration") {
+                $lmdatacheck= get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) ;
+             $lmchartcheck=drupal_render(getchartforselectedProject($foss_type, 'LM', $startdate, $enddate, $countryname, $statename, $cityname));
+                 } else if ($value == "workshop") {
+                     $event_type = "Workshop";
+                    $workshopdatacheck= events_view_filter($foss_type, $event_type, $startdate, $enddate, $countryname, $statename, $cityname);
+                 } else if ($value == "self_workshop") {
+                     $self_workshopdatacheck=getselfworkshoplcount($foss_type,$startdate,$enddate, $statename, $cityname);
+                 } else if ($value == "conference") {
+                     $event_type = "Conference";
+                    $conferencedatacheck= events_view_filter($foss_type, $event_type, $startdate, $enddate, $countryname, $statename, $cityname);
+                 } else if ($value == "spoken_tutorial") {
+                   $spoken_tutorialdatacheck= spokentutorial_view_all($foss_type);
+                 } 
+            
+          
+             } else {
+                 if ($value == "tbc") {
+                     			 $tbcdatacheck="<h5>TextBook Companion Project Not Present</h5>";
+					$tbcchartcheck="";
+                 } else if ($value == "lab_migration") {
+                     			$lmdatacheck="<h5>Lab Migration Project Not Present</h5>";
+					$lmchartcheck="";
+                 } else if ($value == "workshop") {
+                    			$workshopdatacheck= "<h5> No Workshop were conducted </h5>";
+                 } else if ($value == "self_workshop") {
+     					 $self_workshopdatacheck="<h5>No Self Workshop were conducted</h5>";
+                 } else if ($value == "conference") {
+					$conferencedatacheck="<h5>No Conference were conducted</h5>";
+                 } else if ($value == "spoken_tutorial") {
+                     
+				$spoken_tutorialdatacheck="<h5>Spoken Tutorial Not Present</h5>";
+                 } 
+             }
+         }
+    
+   // var_dump($tbcdatacheck."::::::".$lmdatacheck."::::::".$workshopdatacheck.":::::::".$self_workshopdatacheck.":::::::".$conferencedatacheck."::::::".$spoken_tutorialdatacheck);
+//die;
+
+
+
+
          $form['default_load']['#markup'] = '<ul class="nav nav-tabs">                       
                         <li class="active"><a data-toggle="tab" href="#tbctabledata">Textbook Companion</a></li>
                          <li><a data-toggle="tab" href="#lmtabledata">Lab Migration</a></li>
@@ -2071,18 +2162,18 @@ function ajax_example_submit_driven_callback($form, &$form_state)
                       </ul>
         <div class="tab-content">
 
-            <div id="tbctabledata"class="tab-pane fade in active">' . get_tabledata_selectedFoss_TBC_LM($foss_type, 'TBC', 'all', $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) .'
-            <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . drupal_render(getchartforselectedProject($foss_type, "TBC", $startdate, $enddate, $countryname, $statename, $cityname)) . '</div>
+            <div id="tbctabledata"class="tab-pane fade in active">' . $tbcdatacheck .'
+            <div id="tbcchartdata" style="float:left;width:300px;height:300px;">' . $tbcchartcheck. '</div>
             </div>
-            <div id="lmtabledata" class="tab-pane fade ">' . get_tabledata_selectedFoss_TBC_LM($foss_type, 'LM', "all", $startdate, $enddate, $countryname, $statename, $cityname, $link_flag) . '
-        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' .  drupal_render(getchartforselectedProject($foss_type, "LM", $startdate, $enddate, $countryname, $statename, $cityname)) .  '</div>
+            <div id="lmtabledata" class="tab-pane fade ">' . $lmdatacheck . '
+        <div id="lmchartdata" style="float:left;width:350px;height:300px;">' . $lmchartcheck.  '</div>
         </div>   
          <div id="workshopdata" class="tab-pane fade ">
-         '. events_view_filter($foss_type, "Workshop", $startdate, $enddate, $countryname, $statename, $cityname) . '</div>
-        <div id="selfworkshopdata" class="tab-pane fade">' . getselfworkshoplcount($foss_type,$startdate,$enddate, $statename, $cityname).'</div>
-         <div id="conferencedata" class="tab-pane fade ">' . events_view_filter($foss_type,"Conference", $startdate, $enddate, $countryname, $statename, $cityname) .'</div>
+         '. $workshopdatacheck. '</div>
+        <div id="selfworkshopdata" class="tab-pane fade">' . $self_workshopdatacheck.'</div>
+         <div id="conferencedata" class="tab-pane fade ">' . $conferencedatacheck.'</div>
 
-        <div id="spokentutorialdata" class="tab-pane fade ">' .spokentutorial_view_all($foss_type).'</div>
+        <div id="spokentutorialdata" class="tab-pane fade ">' .$spoken_tutorialdatacheck.'</div>
         </div> 
                     ';
                   
@@ -3420,7 +3511,7 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state)
 {
     
      if (($foss_type != 0 ) && $foss_sub_project != 0 && $country != "" && $state != "") {
-        
+       
         $query = db_select('foss_type');
         $query->fields('foss_type', array(
             'id'
@@ -3436,7 +3527,7 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state)
         $foss_detail = $result->fetchObject();
         $foss_type = $foss_detail->foss_name;
         $foss_selfworkshop_no=$foss_detail->foss_selfworkshop_no;
-        if ($foss_sub_project == 1  && $foss_type!=3) {
+        if ($foss_sub_project == 1  && $foss_type!="Python") {
             $sub_project = "textbook_companion_proposal";
             db_set_active($foss_type); //Active other database
             $options = array();
@@ -3454,7 +3545,7 @@ function get_city_list($foss_type, $foss_sub_project, $country, $state)
                 $options[$city_detail->city] = $city_detail->city;
             }
             
-        } else if ($foss_sub_project == 2  && $foss_type!=3) {
+        } else if ($foss_sub_project == 2  && $foss_type!="Python") {
             $sub_project = "lab_migration_proposal";
             db_set_active($foss_type); //Active other database
             $options = array();
@@ -5017,10 +5108,7 @@ function workshop_edit_all($workshop_id = 0)
 function events_view_filter($foss_name, $event_type, $startdate, $enddate, 
     $countryname, $statename, $cityname)
 {
-    // var_dump($foss_name."....". $event_type."....". $startdate."....". $enddate, 
-    // $countryname."....". $statename, $cityname);
-    // die;
-    
+   
     $page_content = "";
     $headers = array(
         "Name",
